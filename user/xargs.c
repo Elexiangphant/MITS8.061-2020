@@ -5,10 +5,11 @@
 
 void xargs(char *com,char *arg[MAXARG]){
 
-    if(fork()==0)exec(com,arg);
-    else wait(0);
-    exit(0);
-    
+    if(fork()==0){
+        exec(com,arg);
+        exit(0);
+    }
+    return;
 
 }
 
@@ -23,34 +24,32 @@ int main(int argc,char *argv[]){
         strcpy(com,argv[1]);
         char *varg[MAXARG];
         char **pvarg=varg;
-        int index=1;
+        char buf[2048];
+        char *p=buf,*last_p=buf;        
         for(int i=1;i<argc;i++){
             *pvarg = argv[i];
             pvarg++;
-            index++;
         }
         
-        int prime=index;
-        char arg[MAXARG];
-        while(read(0,arg,sizeof(arg))>0){
-            char argvv[MAXARG];
-            int n=0;
-            for(int i=0;i<sizeof(arg);i++){
-                if(arg[i]=='\n'||' '){
-                    argvv[n]='\0';
-                    strcpy(varg[index++],argvv);
-                    if(arg[i]=='\n'){
-                    
-                    index=prime;
-                    n=0;
+        char **pa=pvarg;
+        while(read(0,p,1)!=0){
+            
+            if(*p==' '||*p=='\n'){
+                *p='\0';
+                *(pa++)=last_p;
+                last_p=p+1;
+                if(*p=='\n'){
+                    *pa=0;
                     xargs(com,varg);
-                    }
-                }else{
-                    argvv[n++]=arg[i];
+                    pa=pvarg;
                 }
             }
-            argvv[n]='\0';
-            strcpy(varg[index++],argvv);
+            p++;
+        }
+        if(pa!=pvarg){
+            *p='\0';
+            *(pa++)=last_p;
+            *pa=0;
             xargs(com,varg);
         }
         while(wait(0)!=-1){}
